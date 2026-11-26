@@ -1,6 +1,7 @@
 """Command-line assembler and interpreter for variant 23."""
 
 import argparse
+import json
 from pathlib import Path
 import sys
 
@@ -8,6 +9,7 @@ from assembler import parse_program
 from codec import encode, encode_program
 from instructions import MachineError
 from output_file import write_file
+from machine import VirtualMachine
 
 
 def assemble(args):
@@ -21,6 +23,25 @@ def assemble(args):
             print(", ".join(f"0x{byte:02X}" for byte in encode(instruction)))
 
 
+def interpret(args):
+    """Execute a binary and write an inclusive memory range as JSON."""
+    machine = VirtualMachine(args.binary.read_bytes())
+    machine.dump(args.start, args.end)
+    machine.run()
+    document = json.dumps(machine.dump(args.start, args.end), indent=2) + "\n"
+    write_file(args.output, document.encode("utf-8"))
+
+
+def add_interpreter(commands):
+    """Define the interpreter command and required inclusive dump bounds."""
+    runner = commands.add_parser("run", help="execute a machine-code file")
+    runner.add_argument("binary", type=Path)
+    runner.add_argument("-o", "--output", type=Path, required=True)
+    runner.add_argument("--start", type=int, required=True)
+    runner.add_argument("--end", type=int, required=True)
+    runner.set_defaults(action=interpret)
+
+
 def main(argv=None):
     """Parse command-line arguments and report input errors."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -30,6 +51,7 @@ def main(argv=None):
     compiler.add_argument("-o", "--output", type=Path, required=True)
     compiler.add_argument("--test", action="store_true")
     compiler.set_defaults(action=assemble)
+    add_interpreter(commands)
     args = parser.parse_args(argv)
     try:
         args.action(args)
