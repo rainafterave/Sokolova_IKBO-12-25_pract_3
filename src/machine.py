@@ -1,7 +1,7 @@
 """Execute instructions from a unified code and data memory."""
 
 from codec import decode_at
-from instructions import LOAD, READ, STORE, MEMORY_SIZE, OPCODE_MASK, SPECS
+from instructions import ADD, LOAD, READ, STORE, MEMORY_SIZE, OPCODE_MASK, SPECS
 from instructions import MachineError
 
 BYTE_LIMIT = 1 << 8
@@ -22,6 +22,7 @@ class VirtualMachine:
         self.accumulator = 0
         self.operations = {
             LOAD: self.load, READ: self.read, STORE: self.store,
+            ADD: self.add,
         }
 
     def check_address(self, address):
@@ -42,6 +43,11 @@ class VirtualMachine:
         """Write the accumulator into the addressed unified-memory cell."""
         self.check_address(instruction.operand)
         self.memory[instruction.operand] = self.accumulator
+
+    def add(self, instruction):
+        """Add the addressed data value to the accumulator."""
+        self.check_address(instruction.operand)
+        self.accumulator += self.memory[instruction.operand]
 
     def fetch(self):
         """Decode the current memory contents, including earlier code writes."""
@@ -66,7 +72,7 @@ class VirtualMachine:
             instruction, size = self.fetch()
             operation = self.operations.get(instruction.opcode)
             if operation is None:
-                raise MachineError("arithmetic is not implemented at this stage")
+                raise MachineError(f"unsupported opcode: {instruction.opcode}")
             operation(instruction)
             self.pc += size
         return self
