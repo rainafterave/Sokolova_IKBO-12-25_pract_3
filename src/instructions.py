@@ -60,5 +60,6 @@ def validate(instruction):
         type(instruction.operand) is not int
         or not 0 <= instruction.operand < (1 << spec.operand_bits)
     ):
-        raise MachineError(f"B must fit an unsigned {spec.operand_bits}-bit field")
+        message = f"B must fit an unsigned {spec.operand_bits}-bit field"
+        raise MachineError(message)
     return spec
