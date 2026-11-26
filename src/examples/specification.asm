@@ -1,0 +1,4 @@
+ACC = 188;
+ACC = MEM[ACC];
+MEM[771] = ACC;
+ACC = ACC + MEM[64];
